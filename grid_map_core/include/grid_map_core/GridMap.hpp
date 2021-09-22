@@ -83,6 +83,27 @@ class GridMap
    */
   void setGeometry(const SubmapGeometry& geometry);
 
+	void setConstant(const std::string& layer, const double value);
+
+  /*!
+   * Specification for which direction(s) to grow the gridmap in.
+   */
+  enum Direction
+  {
+    CENTERED, // Grow the gridmap in all directions evenly from the center.
+    NE,       // Grow in the +X and +Y (Quadrant 1).
+    NW,       // Grow in the -X and +Y (Quadrant 2).
+    SW,       // Grow in the -X and -Y (Quadrant 3).
+    SE        // Grow in the +X and -Y (Quadrant 4).
+  };
+
+  /*!
+   * Increase the size of the grid map while retaining old data.
+   * @param length the new side lengths in x, and y-direction of the grid map [m].
+   * @param direction the direction to grow in (default = SE).
+   */
+  void grow(const Length& length, const Direction direction=SE); 
+
   /*!
    * Add a new empty data layer.
    * @param layer the name of the layer.
@@ -551,6 +572,13 @@ class GridMap
    */
   void resize(const Index& bufferSize);
 
+  /*!
+   * Resize the buffer without deleting data.
+   * @param size the requested buffer size.
+   * @param direction the direction to grow in (default = SE).
+   */
+  void conservativeResize(const Index& size, const Direction direction=SE);
+
   //! Frame id of the grid map.
   std::string frameId_;
 
@@ -560,8 +588,11 @@ class GridMap
   //! Grid map data stored as layers of matrices.
   std::unordered_map<std::string, Matrix> data_;
 
+  //! Default values for each layer
+  std::unordered_map<std::string, double> defaults_;
+
   //! Names of the data layers.
-  std::vector<std::string> layers_;
+  std::vector<std::string> layers_;	
 
   //! List of layers from `data_` that are the basic grid map layers.
   //! This means that for a cell to be valid, all basic layers need to be valid.
