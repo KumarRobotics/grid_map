@@ -98,17 +98,17 @@ void GridMap::grow(const Length& length, const Direction direction)
 
     case NE:
       position_(0) += delta(0)/2;
-      position_(1) -= delta(1)/2;
+      position_(1) += delta(1)/2;
       break;
 
     case NW:
-      position_(0) += delta(0)/2;
+      position_(0) -= delta(0)/2;
       position_(1) += delta(1)/2;
       break;
 
-    case SW:
-      position_(0) -= delta(0)/2;
-      position_(1) += delta(1)/2;
+    case SE:
+      position_(0) += delta(0)/2;
+      position_(1) -= delta(1)/2;
       break;
 
     default:
@@ -935,7 +935,7 @@ void GridMap::conservativeResize(const Index& size, const Direction direction)
   Eigen::MatrixXf like = Eigen::MatrixXf::Constant(size(0), size(1), NAN);
   for (auto& data : data_)
   {
-		like.setConstant(defaults_[data.first]); //set new values equal to default
+    like.setConstant(defaults_[data.first]); //set new values equal to default
     data.second.conservativeResizeLike(like);
 
     // Swap rows and columns as needed
@@ -957,23 +957,23 @@ void GridMap::conservativeResize(const Index& size, const Direction direction)
         {
           data.second.row(i).swap(data.second.row(i+row_delta));
         }
+        for (int i = size_(1)-1; i >= 0; i--)
+        {
+          data.second.col(i).swap(data.second.col(i+col_delta));
+        }
         break;
 
       case NW:
-        for (int i = size_(0)-1; i >= 0; i--)
-        {
-          data.second.row(i).swap(data.second.row(i+row_delta));
-        }
         for (int i = size_(1)-1; i >= 0; i--)
         {
           data.second.col(i).swap(data.second.col(i+col_delta));
         }
         break;
 
-      case SW:
-        for (int i = size_(1)-1; i >= 0; i--)
+      case SE:
+        for (int i = size_(0)-1; i >= 0; i--)
         {
-          data.second.col(i).swap(data.second.col(i+col_delta));
+          data.second.row(i).swap(data.second.row(i+row_delta));
         }
         break;
 
