@@ -1,5 +1,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <ros/ros.h>
+#include <chrono>
 #include "grid_map_comp/grid_map_comp.hpp"
 
 namespace grid_map {
@@ -9,6 +10,7 @@ class Compressor {
     Compressor(ros::NodeHandle& nh) {
       nh_ = nh;
 
+      parseLayerSpec();
       map_compressed_pub_ = nh_.advertise<grid_map_msgs::GridMapCompressed>("map/compressed", 1);
     }
 
@@ -22,15 +24,35 @@ class Compressor {
     ros::Publisher map_compressed_pub_;
     ros::Subscriber map_sub_;
 
+    std::vector<GridMapComp::LayerSpec> layer_spec_;
+
     void mapCallback(const grid_map_msgs::GridMap::ConstPtr& map_msg) {
-      cv::Mat color_img, elev_img, elev_img_disc;
-      GridMapComp::toImage(*map_msg, {"color", "png", true, false}, color_img);
-      GridMapComp::toImage(*map_msg, {"elevation", "png", false, false}, elev_img);
-      auto scale_offset = GridMapComp::discImage(elev_img, elev_img_disc);
-      ROS_INFO_STREAM(scale_offset.scale << ", " << scale_offset.offset);
-      cv::imshow("color", color_img);
-      cv::imshow("elev", elev_img_disc);
-      cv::waitKey(0);
+      grid_map_msgs::GridMapCompressed compressed_msg;
+
+      auto start_t = std::chrono::high_resolution_clock::now();
+      GridMapComp::toCompressedMsg(*map_msg, layer_spec_, compressed_msg);
+      auto stop_t = std::chrono::high_resolution_clock::now();
+
+      map_compressed_pub_.publish(compressed_msg);
+
+      ROS_INFO_STREAM("\033[34m" << "[MapComp] Compression: " << 
+        std::chrono::duration_cast<std::chrono::milliseconds>(stop_t - start_t).count() << "ms");
+    }
+
+    void parseLayerSpec() {
+      // Hardcode for now
+      layer_spec_.push_back({
+        "color", ".png", true, false
+      });
+      layer_spec_.push_back({
+        "elevation", ".png", false, false 
+      });
+      layer_spec_.push_back({
+        "semantics", ".png", false, true
+      });
+      layer_spec_.push_back({
+        "semantics_viz", ".png", true, false
+      });
     }
 };
 
