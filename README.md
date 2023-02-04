@@ -3,6 +3,8 @@
 Modified version of Grid Map with resize capability.
 Largely from PR https://github.com/ANYbotics/grid_map/pull/173
 
+In addition, added grid_map_comp, which includes nodes for compressing as decompressing grid_maps, as well as a library for directly parsing a GridMap message into cv::Mats.
+
 ## Overview
 
 This is a C++ library with [ROS] interface to manage two-dimensional grid maps with multiple data layers. It is designed for mobile robotic mapping to store data such as elevation, variance, color, friction coefficient, foothold quality, surface normal, traversability etc. It is used in the [Robot-Centric Elevation Mapping](https://github.com/anybotics/elevation_mapping) package designed for rough terrain navigation.
