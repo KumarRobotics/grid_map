@@ -11,11 +11,11 @@ class Compressor {
       nh_ = nh;
 
       parseLayerSpec();
-      map_compressed_pub_ = nh_.advertise<grid_map_msgs::GridMapCompressed>("map/compressed", 1);
+      map_compressed_pub_ = nh_.advertise<grid_map_msgs::GridMapCompressed>("map/compressed", 2);
     }
 
     void initialize() {
-      map_sub_ = nh_.subscribe("map", 1, &Compressor::mapCallback, this);
+      map_sub_ = nh_.subscribe("map", 2, &Compressor::mapCallback, this);
     }
 
   private:
@@ -29,14 +29,15 @@ class Compressor {
     void mapCallback(const grid_map_msgs::GridMap::ConstPtr& map_msg) {
       grid_map_msgs::GridMapCompressed compressed_msg;
 
-      auto start_t = std::chrono::high_resolution_clock::now();
+      using namespace std::chrono;
+      auto start_t = high_resolution_clock::now();
       GridMapComp::toCompressedMsg(*map_msg, layer_spec_, compressed_msg);
-      auto stop_t = std::chrono::high_resolution_clock::now();
-
-      map_compressed_pub_.publish(compressed_msg);
+      auto stop_t = high_resolution_clock::now();
 
       ROS_INFO_STREAM("\033[34m" << "[MapComp] Compression: " << 
-        std::chrono::duration_cast<std::chrono::milliseconds>(stop_t - start_t).count() << "ms");
+        duration_cast<milliseconds>(stop_t - start_t).count() << "ms");
+
+      map_compressed_pub_.publish(compressed_msg);
     }
 
     void parseLayerSpec() {

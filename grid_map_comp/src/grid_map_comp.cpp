@@ -28,23 +28,24 @@ void GridMapComp::toCompressedMsg(const grid_map_msgs::GridMap& msg,
     layer.format = layer_info.format;
     layer.is_rgb = layer_info.is_rgb;
 
-    cv::Mat layer_img;
+    cv::Mat layer_img, disc_img;
     toImage(msg, layer_info, layer_img);
 
     if (layer_img.depth() == CV_32F) {
       // We cannot directly encode a floating point image
       // Instead, we have to rescale and convert to uint16
-      cv::Mat disc_img;
       auto scale_offset = discImage(layer_img, disc_img);
       layer.scale = scale_offset.scale;
       layer.offset = scale_offset.offset;
-      cv::imencode(layer.format, disc_img, layer.data);
     } else {
       // We can compress directly
       layer.scale = 1;
       layer.offset = 0;
-      cv::imencode(layer.format, layer_img, layer.data);
+      // This is super cheap, not a deep copy
+      disc_img = layer_img;
     }
+
+    cv::imencode(layer.format, disc_img, layer.data);
   }
 }
 
@@ -87,16 +88,9 @@ void GridMapComp::toImage(const grid_map_msgs::GridMap& msg,
       }
     }
   } else if (layer.is_char) {
-    image = cv::Mat(raw_mat.cols, raw_mat.rows, CV_8UC1, cv::Scalar(255));
-
-    for(int i=0; i<image.rows; i++) {
-      for(int j=0; j<image.cols; j++) {
-        float val = raw_mat.at<float>(j, i);
-        if (std::isfinite(val)) {
-          image.at<uint8_t>(i, j) = val;
-        }
-      }
-    }
+    raw_mat.convertTo(image, CV_8UC1);
+    image.setTo(std::numeric_limits<uint8_t>::max(), raw_mat != raw_mat);
+    cv::transpose(image, image);
   } else {
     cv::transpose(raw_mat, image);
   }

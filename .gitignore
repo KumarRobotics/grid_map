@@ -33,6 +33,9 @@
 .settings
 *.pydevproject
 
+# vim
+*.swp
+
 # OS X
 .DS_Store
 
