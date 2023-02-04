@@ -1,5 +1,5 @@
 #include "grid_map_comp/grid_map_comp.hpp"
-#include <opencv2/core/core.hpp>
+#include <opencv2/imgcodecs/imgcodecs.hpp>
 
 namespace grid_map {
 
@@ -7,6 +7,45 @@ void GridMapComp::toCompressedMsg(const grid_map_msgs::GridMap& msg,
     const std::vector<LayerSpec>& layers,
     grid_map_msgs::GridMapCompressed& comp_msg)
 {
+  comp_msg.info = msg.info;
+  comp_msg.outer_start_index = msg.outer_start_index;
+  comp_msg.inner_start_index = msg.inner_start_index;
+
+  for (const auto& layer_info : layers) {
+    comp_msg.layers.push_back(layer_info.name);
+    if (std::find(msg.basic_layers.begin(), msg.basic_layers.end(), layer_info.name) != 
+        msg.basic_layers.end()) 
+    {
+      // layer is a basic layer
+      comp_msg.basic_layers.push_back(layer_info.name);
+    }
+    // Push, then access data.  This is more efficient than assembling and then
+    // pushing, which would create another copy
+    comp_msg.data.push_back({});
+    auto& layer = comp_msg.data.back();
+
+    // Metadata
+    layer.format = layer_info.format;
+    layer.is_rgb = layer_info.is_rgb;
+
+    cv::Mat layer_img;
+    toImage(msg, layer_info, layer_img);
+
+    if (layer_img.depth() == CV_32F) {
+      // We cannot directly encode a floating point image
+      // Instead, we have to rescale and convert to uint16
+      cv::Mat disc_img;
+      auto scale_offset = discImage(layer_img, disc_img);
+      layer.scale = scale_offset.scale;
+      layer.offset = scale_offset.offset;
+      cv::imencode(layer.format, disc_img, layer.data);
+    } else {
+      // We can compress directly
+      layer.scale = 1;
+      layer.offset = 0;
+      cv::imencode(layer.format, layer_img, layer.data);
+    }
+  }
 }
 
 void GridMapComp::fromCompressedMsg(
@@ -61,6 +100,25 @@ void GridMapComp::toImage(const grid_map_msgs::GridMap& msg,
   } else {
     cv::transpose(raw_mat, image);
   }
+}
+
+GridMapComp::ImageDisc GridMapComp::discImage(
+    cv::Mat& float_img, cv::Mat& disc_img) 
+{
+  // Get min and max of non-nan points
+  double max, min;
+  cv::minMaxLoc(float_img, &min, &max, 0, 0, float_img == float_img);
+  // Set nans to max value
+  ImageDisc scale_offset;
+
+  // Use max-2 to make sure that max is reserved for nan
+  scale_offset.scale = (max - min)/(std::numeric_limits<uint16_t>::max()-2);
+  scale_offset.offset = min;
+  float_img.convertTo(disc_img, CV_16UC1, 1./scale_offset.scale, 
+      -scale_offset.offset/scale_offset.scale);
+  disc_img.setTo(std::numeric_limits<uint16_t>::max(), float_img != float_img);
+
+  return scale_offset;
 }
 
 } // namespace grid_map

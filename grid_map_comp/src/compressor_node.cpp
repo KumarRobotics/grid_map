@@ -23,9 +23,13 @@ class Compressor {
     ros::Subscriber map_sub_;
 
     void mapCallback(const grid_map_msgs::GridMap::ConstPtr& map_msg) {
-      cv::Mat img;
-      GridMapComp::toImage(*map_msg, {"color", "png", true, false}, img);
-      cv::imshow("color", img);
+      cv::Mat color_img, elev_img, elev_img_disc;
+      GridMapComp::toImage(*map_msg, {"color", "png", true, false}, color_img);
+      GridMapComp::toImage(*map_msg, {"elevation", "png", false, false}, elev_img);
+      auto scale_offset = GridMapComp::discImage(elev_img, elev_img_disc);
+      ROS_INFO_STREAM(scale_offset.scale << ", " << scale_offset.offset);
+      cv::imshow("color", color_img);
+      cv::imshow("elev", elev_img_disc);
       cv::waitKey(0);
     }
 };

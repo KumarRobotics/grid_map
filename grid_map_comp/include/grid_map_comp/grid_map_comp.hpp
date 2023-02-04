@@ -26,6 +26,12 @@ class GridMapComp {
     static void toImage(const grid_map_msgs::GridMap& msg,
         const LayerSpec& layers, cv::Mat& image);
 
+    struct ImageDisc {
+      float scale;
+      float offset;
+    };
+    static ImageDisc discImage(cv::Mat& float_img, cv::Mat& disc_img);
+
   private:
     static inline std::array<uint8_t, 3> unpackColor(uint32_t color) {
       return {static_cast<uint8_t>(color & 0x0000ff),
