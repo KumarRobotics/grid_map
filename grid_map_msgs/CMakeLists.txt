@@ -17,6 +17,8 @@ add_message_files(
   FILES
   GridMapInfo.msg
   GridMap.msg
+  GridMapCompressed.msg
+  GridMapCompressedLayer.msg
 )
 
 ## Generate services in the 'srv' folder
