@@ -152,6 +152,7 @@ add_dependencies(${PROJECT_NAME}_compressor_node
 )
 
 target_link_libraries(${PROJECT_NAME}_compressor_node
+  yaml-cpp
   ${PROJECT_NAME}
 )
 

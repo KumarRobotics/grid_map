@@ -12,8 +12,7 @@ class GridMapComp {
     struct LayerSpec {
       std::string name;
       std::string format;
-      bool is_rgb;
-      bool is_char;
+      std::string type;
     };
     static void toCompressedMsg(const grid_map_msgs::GridMap& msg,
         const std::vector<LayerSpec>& layers,

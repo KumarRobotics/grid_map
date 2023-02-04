@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <yaml-cpp/yaml.h>
 #include <chrono>
 #include "grid_map_comp/grid_map_comp.hpp"
 
@@ -9,8 +10,21 @@ class Compressor {
     Compressor(ros::NodeHandle& nh) {
       nh_ = nh;
 
-      parseLayerSpec();
+      std::string layer_config;
+      nh_.getParam("layer_config", layer_config);
+      parseLayerSpec(layer_config);
+      
       map_compressed_pub_ = nh_.advertise<grid_map_msgs::GridMapCompressed>("map/compressed", 2);
+
+      using namespace std;
+      stringstream layer_ss;
+      for (const auto& l : layer_spec_) {
+        layer_ss << "    " << l.name << ": " << l.format << ", " << l.type << endl;
+      }
+
+      ROS_INFO_STREAM("\033[32m" << "[MapComp]" << endl << "[ROS] ======== Configuration ========" << endl <<
+        "layer_config:" << endl << layer_ss.str() << 
+        "[ROS] ====== End Configuration ======" << "\033[0m");
     }
 
     void initialize() {
@@ -39,20 +53,21 @@ class Compressor {
       map_compressed_pub_.publish(compressed_msg);
     }
 
-    void parseLayerSpec() {
-      // Hardcode for now
-      layer_spec_.push_back({
-        "color", ".png", true, false
-      });
-      layer_spec_.push_back({
-        "elevation", ".png", false, false 
-      });
-      layer_spec_.push_back({
-        "semantics", ".png", false, true
-      });
-      layer_spec_.push_back({
-        "semantics_viz", ".png", true, false
-      });
+    void parseLayerSpec(const std::string& path) {
+      try {
+        const YAML::Node config = YAML::LoadFile(path);
+        for (const auto& layer_config : config) {
+          layer_spec_.push_back({
+            layer_config["name"].as<std::string>(),
+            layer_config["format"].as<std::string>(),
+            layer_config["type"].as<std::string>()
+          });
+        }
+      } catch (const YAML::BadFile& ex) {
+        throw std::invalid_argument("Could not find layer config");
+      } catch (const YAML::Exception& ex) {
+        throw std::invalid_argument("Layer config formatted incorrectly");
+      }
     }
 };
 

@@ -26,7 +26,7 @@ void GridMapComp::toCompressedMsg(const grid_map_msgs::GridMap& msg,
 
     // Metadata
     layer.format = layer_info.format;
-    layer.is_rgb = layer_info.is_rgb;
+    layer.is_rgb = layer_info.type == "rgb";
 
     cv::Mat layer_img, disc_img;
     toImage(msg, layer_info, layer_img);
@@ -133,7 +133,7 @@ void GridMapComp::toImage(const grid_map_msgs::GridMap& msg,
 
   // Note that we transpose in all of these b/c data is stored col-major
   // but opencv is row-major
-  if (layer.is_rgb) {
+  if (layer.type == "rgb") {
     image = cv::Mat(raw_mat.cols, raw_mat.rows, CV_8UC3, cv::Scalar(255, 255, 255));
 
     for(int i=0; i<image.rows; i++) {
@@ -145,7 +145,7 @@ void GridMapComp::toImage(const grid_map_msgs::GridMap& msg,
         }
       }
     }
-  } else if (layer.is_char) {
+  } else if (layer.type == "char") {
     raw_mat.convertTo(image, CV_8UC1);
     image.setTo(std::numeric_limits<uint8_t>::max(), raw_mat != raw_mat);
     cv::transpose(image, image);
