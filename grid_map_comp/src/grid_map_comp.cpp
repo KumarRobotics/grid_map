@@ -53,6 +53,64 @@ void GridMapComp::fromCompressedMsg(
     const grid_map_msgs::GridMapCompressed& comp_msg,
     grid_map_msgs::GridMap& msg)
 {
+  // Metadata is all the same
+  msg.info = comp_msg.info;
+  msg.outer_start_index = comp_msg.outer_start_index;
+  msg.inner_start_index = comp_msg.inner_start_index;
+  msg.layers = comp_msg.layers;
+  msg.basic_layers = comp_msg.basic_layers;
+
+  for (const auto& comp_layer : comp_msg.data) {
+    cv::Mat raw_decomp;
+    cv::imdecode(comp_layer.data, cv::IMREAD_UNCHANGED, &raw_decomp);
+
+    msg.data.push_back({});
+    auto& layer = msg.data.back();
+    layer.data.resize(raw_decomp.total());
+    cv::Mat dest_mat(raw_decomp.cols, raw_decomp.rows, CV_32F, 
+                    &layer.data.front());
+
+    // Metadata
+    {
+      std_msgs::MultiArrayDimension dim;
+      dim.label = "column_index";
+      dim.size = raw_decomp.cols;
+      dim.stride = raw_decomp.cols * raw_decomp.rows;
+      layer.layout.dim.push_back(dim);
+    }
+    {
+      std_msgs::MultiArrayDimension dim;
+      dim.label = "row_index";
+      dim.size = raw_decomp.rows;
+      dim.stride = raw_decomp.rows;
+      layer.layout.dim.push_back(dim);
+    }
+    layer.layout.data_offset = 0;
+
+    // Actually copy over data
+    if (comp_layer.is_rgb) {
+      dest_mat.setTo(std::numeric_limits<float>::quiet_NaN());
+      for(int i=0; i<dest_mat.rows; i++) {
+        for(int j=0; j<dest_mat.cols; j++) {
+          auto& val = raw_decomp.at<cv::Vec3b>(j, i);
+          if (val[0] != 255 || val[1] != 255 || val[2] != 255) {
+            auto color = packColor(val[0], val[1], val[2]);
+            dest_mat.at<float>(i, j) = *reinterpret_cast<float*>(&color);
+          }
+        }
+      }
+    } else {
+      cv::transpose(raw_decomp, raw_decomp);
+      raw_decomp.convertTo(dest_mat, CV_32F, comp_layer.scale, comp_layer.offset);
+      if (raw_decomp.type() == CV_16U) {
+        dest_mat.setTo(std::numeric_limits<float>::quiet_NaN(), 
+            raw_decomp == std::numeric_limits<uint16_t>::max());
+      } else {
+        dest_mat.setTo(std::numeric_limits<float>::quiet_NaN(), 
+            raw_decomp == std::numeric_limits<uint8_t>::max());
+      }
+    }
+  }
 }
 
 void GridMapComp::toImage(const grid_map_msgs::GridMap& msg,

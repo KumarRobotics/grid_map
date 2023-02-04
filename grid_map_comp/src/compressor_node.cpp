@@ -1,4 +1,3 @@
-#include <opencv2/highgui/highgui.hpp>
 #include <ros/ros.h>
 #include <chrono>
 #include "grid_map_comp/grid_map_comp.hpp"

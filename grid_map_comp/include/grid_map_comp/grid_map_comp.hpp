@@ -33,6 +33,12 @@ class GridMapComp {
     static ImageDisc discImage(cv::Mat& float_img, cv::Mat& disc_img);
 
   private:
+    static inline uint32_t packColor(uint8_t b, uint8_t g, uint8_t r) {
+      return (static_cast<uint32_t>(r) << 16 |
+              static_cast<uint32_t>(g) << 8 |
+              static_cast<uint32_t>(b));
+    }
+
     static inline std::array<uint8_t, 3> unpackColor(uint32_t color) {
       return {static_cast<uint8_t>(color & 0x0000ff),
               static_cast<uint8_t>((color >> 8) & 0x0000ff),
