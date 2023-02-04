@@ -23,9 +23,15 @@ class GridMapComp {
         const grid_map_msgs::GridMapCompressed& comp_msg,
         grid_map_msgs::GridMap& msg);
 
-    static void toImages(const grid_map_msgs::GridMap& msg,
-        const std::vector<LayerSpec>& layers,
-        std::vector<cv::Mat>& images);
+    static void toImage(const grid_map_msgs::GridMap& msg,
+        const LayerSpec& layers, cv::Mat& image);
+
+  private:
+    static inline std::array<uint8_t, 3> unpackColor(uint32_t color) {
+      return {static_cast<uint8_t>(color & 0x0000ff),
+              static_cast<uint8_t>((color >> 8) & 0x0000ff),
+              static_cast<uint8_t>((color >> 16) & 0x0000ff)};
+    }
 };
 
 } // namespace grid_map
