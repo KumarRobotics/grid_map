@@ -147,7 +147,10 @@ void GridMapComp::toImage(const grid_map_msgs::GridMap& msg,
     }
   } else if (layer.type == "char") {
     raw_mat.convertTo(image, CV_8UC1);
-    image.setTo(std::numeric_limits<uint8_t>::max(), raw_mat != raw_mat);
+    cv::Mat raw_copy = raw_mat.clone();
+    cv::patchNaNs(raw_copy, std::numeric_limits<float>::max());
+    image.setTo(std::numeric_limits<uint8_t>::max(), 
+        raw_copy == std::numeric_limits<float>::max());
     cv::transpose(image, image);
   } else {
     cv::transpose(raw_mat, image);
@@ -166,9 +169,12 @@ GridMapComp::ImageDisc GridMapComp::discImage(
   // Use max-2 to make sure that max is reserved for nan
   scale_offset.scale = (max - min)/(std::numeric_limits<uint16_t>::max()-2);
   scale_offset.offset = min;
+  cv::patchNaNs(float_img, std::numeric_limits<float>::max());
+
   float_img.convertTo(disc_img, CV_16UC1, 1./scale_offset.scale, 
       -scale_offset.offset/scale_offset.scale);
-  disc_img.setTo(std::numeric_limits<uint16_t>::max(), float_img != float_img);
+  disc_img.setTo(std::numeric_limits<uint16_t>::max(), 
+      float_img == std::numeric_limits<float>::max());
 
   return scale_offset;
 }
