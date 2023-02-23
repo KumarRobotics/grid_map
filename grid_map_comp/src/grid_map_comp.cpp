@@ -162,17 +162,18 @@ GridMapComp::ImageDisc GridMapComp::discImage(
 {
   // Get min and max of non-nan points
   double max, min;
-  cv::minMaxLoc(float_img, &min, &max, 0, 0, float_img == float_img);
-  // Set nans to max value
+  cv::patchNaNs(float_img, std::numeric_limits<float>::max());
+  cv::minMaxLoc(float_img, &min, &max, 0, 0, 
+      float_img != std::numeric_limits<float>::max());
   ImageDisc scale_offset;
 
   // Use max-2 to make sure that max is reserved for nan
   scale_offset.scale = (max - min)/(std::numeric_limits<uint16_t>::max()-2);
   scale_offset.offset = min;
-  cv::patchNaNs(float_img, std::numeric_limits<float>::max());
 
   float_img.convertTo(disc_img, CV_16UC1, 1./scale_offset.scale, 
       -scale_offset.offset/scale_offset.scale);
+  // Set nans to max value
   disc_img.setTo(std::numeric_limits<uint16_t>::max(), 
       float_img == std::numeric_limits<float>::max());
 
