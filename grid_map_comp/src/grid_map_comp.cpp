@@ -12,6 +12,13 @@ void GridMapComp::toCompressedMsg(const grid_map_msgs::GridMap& msg,
   comp_msg.inner_start_index = msg.inner_start_index;
 
   for (const auto& layer_info : layers) {
+    if (std::find(msg.layers.begin(), msg.layers.end(), layer_info.name) == 
+        msg.basic_layers.end()) 
+    {
+      // Layer is not in the message, stop
+      continue;
+    }
+
     comp_msg.layers.push_back(layer_info.name);
     if (std::find(msg.basic_layers.begin(), msg.basic_layers.end(), layer_info.name) != 
         msg.basic_layers.end()) 
