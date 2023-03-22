@@ -12,9 +12,10 @@ class Compressor {
 
       std::string layer_config;
       nh_.getParam("layer_config", layer_config);
+      nh_.getParam("map_topic_name", map_topic_name_);
       parseLayerSpec(layer_config);
       
-      map_compressed_pub_ = nh_.advertise<grid_map_msgs::GridMapCompressed>("map/compressed", 2);
+      map_compressed_pub_ = nh_.advertise<grid_map_msgs::GridMapCompressed>(map_topic_name_ + "/compressed", 2);
 
       using namespace std;
       stringstream layer_ss;
@@ -28,11 +29,13 @@ class Compressor {
     }
 
     void initialize() {
-      map_sub_ = nh_.subscribe("map", 2, &Compressor::mapCallback, this);
+      map_sub_ = nh_.subscribe(map_topic_name_, 2, &Compressor::mapCallback, this);
     }
 
   private:
     ros::NodeHandle nh_;
+
+    std::string map_topic_name_{"map"};
 
     ros::Publisher map_compressed_pub_;
     ros::Subscriber map_sub_;

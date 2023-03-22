@@ -9,16 +9,20 @@ class Decompressor {
     Decompressor(ros::NodeHandle& nh) {
       nh_ = nh;
 
-      map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("map", 2);
+      nh_.getParam("map_topic_name", map_topic_name_);
+
+      map_pub_ = nh_.advertise<grid_map_msgs::GridMap>(map_topic_name_, 2);
     }
 
     void initialize() {
-      map_compressed_sub_ = nh_.subscribe("map/compressed", 2, 
+      map_compressed_sub_ = nh_.subscribe(map_topic_name_ + "/compressed", 2, 
           &Decompressor::compressedCallback, this);
     }
 
   private:
     ros::NodeHandle nh_;
+
+    std::string map_topic_name_{"map"};
 
     ros::Publisher map_pub_;
     ros::Subscriber map_compressed_sub_;
