@@ -13,7 +13,7 @@ void GridMapComp::toCompressedMsg(const grid_map_msgs::GridMap& msg,
 
   for (const auto& layer_info : layers) {
     if (std::find(msg.layers.begin(), msg.layers.end(), layer_info.name) == 
-        msg.basic_layers.end()) 
+        msg.layers.end())
     {
       // Layer is not in the message, stop
       continue;
